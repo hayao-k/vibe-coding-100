@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>15パズル</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>15パズル</h1>
+        
+        <div class="controls">
+            <input type="file" id="imageInput" accept="image/*">
+            <button id="startButton">ゲーム開始</button>
+            <button id="resetButton">リセット</button>
+            <button id="toggleNumbersButton">数字表示: OFF</button>
+        </div>
+        
+        <div class="difficulty">
+            <label>難易度: </label>
+            <select id="difficultySelect">
+                <option value="3">3×3</option>
+                <option value="4" selected>4×4 (標準)</option>
+                <option value="5">5×5</option>
+            </select>
+        </div>
+        
+        <div class="game-container">
+            <div id="puzzle" class="puzzle" tabindex="0"></div>
+            <div id="preview" class="preview">
+                <h3>プレビュー</h3>
+                <img id="previewImage" src="" alt="プレビュー画像">
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <p>矢印キー（←↑↓→）で操作できます</p>
+            <p>自分の画像をアップロードして遊べます</p>
+        </div>
+        
+        <div class="status">
+            <p>移動回数: <span id="moveCount">0</span></p>
+            <p>経過時間: <span id="timer">00:00</span></p>
+        </div>
+        
+        <div id="completeMessage" class="complete-message hidden">
+            <h2>クリア！</h2>
+            <p>移動回数: <span id="finalMoveCount">0</span></p>
+            <p>タイム: <span id="finalTime">00:00</span></p>
+            <button id="playAgainButton">もう一度遊ぶ</button>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
