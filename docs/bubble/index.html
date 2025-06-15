@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🫧バブルゲーム🫧</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="game-container">
+            <h1>🫧バブルゲーム🫧</h1>
+            
+            <div class="info">
+                <div class="score-info">
+                    <span>スコア: <span id="score">0</span></span>
+                    <span>レベル: <span id="level">1</span></span>
+                </div>
+            </div>
+            
+            <div class="game-board" id="gameBoard"></div>
+            
+            <div class="controls">
+                <button class="btn" onclick="startGame()">新しいゲーム</button>
+                <button class="btn" onclick="clearSelection()">選択解除</button>
+                <button class="btn special-item" id="bombItem" onclick="useBombItem()">💣 爆弾 (<span id="bombCount">3</span>)</button>
+            </div>
+            
+            <div class="message" id="message">ゲームを開始してください</div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
