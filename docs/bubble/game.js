@@ -18,6 +18,90 @@ class BubbleGame {
         this.floatingCheckInterval = null;
         this.removalTimer = null;
         this.timerDuration = 1000; // 1秒の猶予時間
+        
+        // レスポンシブ対応のための設定
+        this.dimensions = this.getBoardDimensions();
+        this.setupResponsiveHandlers();
+    }
+
+    getBoardDimensions() {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        const isMobile = screenWidth <= 768;
+        const isSmallMobile = screenWidth <= 480;
+        const isLandscape = screenWidth > screenHeight;
+        
+        let config;
+        
+        if (isSmallMobile) {
+            // 小さなモバイル画面
+            config = {
+                boardWidth: Math.min(320, screenWidth - 40),
+                boardHeight: Math.min(400, screenHeight * 0.5),
+                bubbleSize: 28,
+                spacing: 35,
+                adjacentDistance: 60
+            };
+        } else if (isMobile && !isLandscape) {
+            // モバイル縦画面
+            config = {
+                boardWidth: Math.min(400, screenWidth - 40),
+                boardHeight: Math.min(450, screenHeight * 0.55),
+                bubbleSize: 32,
+                spacing: 40,
+                adjacentDistance: 70
+            };
+        } else if (isMobile && isLandscape) {
+            // モバイル横画面
+            config = {
+                boardWidth: Math.min(500, screenWidth * 0.7),
+                boardHeight: Math.min(350, screenHeight - 200),
+                bubbleSize: 30,
+                spacing: 38,
+                adjacentDistance: 65
+            };
+        } else {
+            // デスクトップ
+            config = {
+                boardWidth: 570,
+                boardHeight: 500,
+                bubbleSize: 40,
+                spacing: 55,
+                adjacentDistance: 80
+            };
+        }
+        
+        // 列数を計算
+        config.bubblesPerRow = Math.floor((config.boardWidth - 20) / config.spacing);
+        
+        return config;
+    }
+
+    setupResponsiveHandlers() {
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                const newDimensions = this.getBoardDimensions();
+                if (JSON.stringify(newDimensions) !== JSON.stringify(this.dimensions)) {
+                    this.dimensions = newDimensions;
+                    this.updateBoardSize();
+                    if (this.gameRunning) {
+                        this.repositionBubbles();
+                    }
+                }
+            }, 250);
+        });
+    }
+
+    updateBoardSize() {
+        this.board.style.width = this.dimensions.boardWidth + 'px';
+        this.board.style.height = this.dimensions.boardHeight + 'px';
+        
+        // CSS変数を更新
+        document.documentElement.style.setProperty('--bubble-size', this.dimensions.bubbleSize + 'px');
+        document.documentElement.style.setProperty('--board-width', this.dimensions.boardWidth + 'px');
+        document.documentElement.style.setProperty('--board-height', this.dimensions.boardHeight + 'px');
     }
 
     startGame() {
@@ -32,6 +116,7 @@ class BubbleGame {
         this.updateLevel();
         this.updateBombCount();
         this.clearBoard();
+        this.updateBoardSize(); // ボードサイズを更新
         this.generateInitialBubbles();
         this.startBubbleDrop();
         this.startFloatingBubbleCheck();
@@ -45,11 +130,7 @@ class BubbleGame {
     }
 
     generateInitialBubbles() {
-        const bubbleSize = 40;
-        const boardWidth = 570;
-        const boardHeight = 500;
-        const spacing = bubbleSize + 15;
-        const bubblesPerRow = Math.floor((boardWidth - 20) / spacing);
+        const { bubbleSize, boardWidth, boardHeight, spacing, bubblesPerRow } = this.dimensions;
         const rows = 4;
         
         for (let row = 0; row < rows; row++) {
@@ -75,9 +156,44 @@ class BubbleGame {
         bubble.classList.add(color);
         bubble.dataset.color = color;
         
+        // レスポンシブサイズを適用
+        bubble.style.width = this.dimensions.bubbleSize + 'px';
+        bubble.style.height = this.dimensions.bubbleSize + 'px';
+        
         bubble.addEventListener('click', (e) => this.handleBubbleClick(e, bubble));
         
         return bubble;
+    }
+
+    repositionBubbles() {
+        // 既存のバブルを新しいグリッドに再配置
+        const { spacing, boardHeight, bubbleSize, bubblesPerRow } = this.dimensions;
+        
+        // バブルを底から上に向かって再配置
+        const sortedBubbles = [...this.bubbles].sort((a, b) => {
+            const aY = parseFloat(a.style.top);
+            const bY = parseFloat(b.style.top);
+            return bY - aY; // 下から上へ
+        });
+        
+        let currentRow = 0;
+        let currentCol = 0;
+        
+        sortedBubbles.forEach(bubble => {
+            const x = 10 + currentCol * spacing;
+            const y = boardHeight - bubbleSize - 10 - (currentRow * spacing);
+            
+            bubble.style.left = x + 'px';
+            bubble.style.top = y + 'px';
+            bubble.style.width = this.dimensions.bubbleSize + 'px';
+            bubble.style.height = this.dimensions.bubbleSize + 'px';
+            
+            currentCol++;
+            if (currentCol >= bubblesPerRow) {
+                currentCol = 0;
+                currentRow++;
+            }
+        });
     }
 
     handleBubbleClick(e, bubble) {
@@ -128,7 +244,7 @@ class BubbleGame {
             const selectedY = parseFloat(selectedBubble.style.top);
             const distance = Math.sqrt((newX - selectedX) ** 2 + (newY - selectedY) ** 2);
             
-            if (distance <= 80) {
+            if (distance <= this.dimensions.adjacentDistance) {
                 return true;
             }
         }
@@ -348,11 +464,7 @@ class BubbleGame {
     }
 
     bubbleLineFromBottom() {
-        const bubbleSize = 40;
-        const boardWidth = 570;
-        const boardHeight = 500;
-        const spacing = bubbleSize + 15;
-        const bubblesPerLine = Math.floor((boardWidth - 20) / spacing);
+        const { bubbleSize, boardWidth, boardHeight, spacing, bubblesPerRow } = this.dimensions;
         
         if (this.bubbles.length > 80) {
             return;
@@ -370,7 +482,7 @@ class BubbleGame {
         
         setTimeout(() => {
             const newLineBubbles = [];
-            for (let i = 0; i < bubblesPerLine; i++) {
+            for (let i = 0; i < bubblesPerRow; i++) {
                 const bubble = this.createBubble();
                 const x = 10 + i * spacing;
                 const y = boardHeight - bubbleSize - 10;
@@ -464,9 +576,7 @@ class BubbleGame {
 
     animateBubbleFall(bubble) {
         const fallSpeed = 6;
-        const bubbleSize = 40;
-        const boardHeight = 500;
-        const spacing = bubbleSize + 15;
+        const { bubbleSize, boardHeight, spacing } = this.dimensions;
         
         const fallInterval = setInterval(() => {
             if (!bubble.parentNode) {
@@ -522,10 +632,7 @@ class BubbleGame {
     }
 
     snapToGrid(bubble) {
-        const bubbleSize = 40;
-        const boardHeight = 500;
-        const boardWidth = 570;
-        const spacing = bubbleSize + 15;
+        const { bubbleSize, boardHeight, boardWidth, spacing } = this.dimensions;
         const currentX = parseFloat(bubble.style.left);
         const currentY = parseFloat(bubble.style.top);
         
@@ -541,9 +648,7 @@ class BubbleGame {
     }
 
     hasSupport(x, y, currentBubble) {
-        const bubbleSize = 40;
-        const boardHeight = 500;
-        const spacing = bubbleSize + 15;
+        const { bubbleSize, boardHeight, spacing } = this.dimensions;
         
         if (y >= boardHeight - bubbleSize - 15) {
             return { hasSupport: true, slideDirection: null };
@@ -643,7 +748,7 @@ class BubbleGame {
     }
 
     checkGameOverCondition() {
-        const gameOverLine = 60;
+        const gameOverLine = Math.min(60, this.dimensions.boardHeight * 0.12); // 動的なゲームオーバーライン
         
         for (let bubble of this.bubbles) {
             const bubbleTop = parseFloat(bubble.style.top);
@@ -684,4 +789,11 @@ function useBombItem() {
 // ページ読み込み完了時の初期化
 document.addEventListener('DOMContentLoaded', () => {
     game.updateBombCount();
+    game.updateBoardSize(); // 初期ボードサイズを設定
+    
+    // ビューポート設定を確認・調整
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    }
 });
